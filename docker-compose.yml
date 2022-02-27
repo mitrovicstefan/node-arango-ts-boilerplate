@@ -1,0 +1,47 @@
+version: '3.7'
+
+services:
+  node:
+    build:
+      context: .
+    command: sh -c "yarn start"
+    ports:
+      - "8091:8091"
+    networks:
+      - internal
+      - web
+    labels:
+      - traefik.http.routers.api.rule=Host(`your-domain-here`)
+      - traefik.http.routers.api.tls=true
+      - traefik.http.routers.api.tls.certresolver=lets-encrypt
+      - traefik.port=8091
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+
+  arango:
+    image: arangodb:latest
+    environment:
+      ARANGO_RANDOM_ROOT_PASSWORD: 1
+    labels:
+      - traefik.http.routers.db.rule=Host(`arango-domain-here`)
+      - traefik.http.routers.db.tls=true
+      - traefik.http.routers.db.tls.certresolver=lets-encrypt
+      - traefik.port=8529
+
+    volumes:
+      - "./database:/var/lib/arangodb3:rw"
+      - "./database:/var/lib/arangodb3-apps:rw"
+    ports:
+        - "8525:8529"
+    networks:
+        - internal
+        - web
+
+volumes:
+  node-modules:
+networks:
+  web:
+    external: true
+  internal:
+    external: false
